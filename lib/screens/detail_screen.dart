@@ -1,5 +1,6 @@
 // lib/screens/detail_screen.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/todo.dart';
 
@@ -9,26 +10,55 @@ class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key, required this.todo});
 
   @override
+  // Digunakan untuk membuat komponen dinamis yang penampilannya dapat berubah merespons sentuhan atau perubahan data.
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends State<DetailScreen> {
-  // State interaktif[cite: 1]
-  bool isCompleted = false;
+  // === 1. DEFINISI STATE ===
+  // Memori aplikasi yang menentukan hasil akhir antarmuka.
+  bool isCompleted = false; 
+  int secondsViewed = 0;
+  Timer? _backgroundTimer;
 
+  // === 2. LIFECYCLE: initState ===
+  @override
+  void initState() {
+    super.initState();
+    // Dipanggil hanya satu kali seumur hidup widget untuk menyiapkan sistem sebelum berjalan.
+    
+    // EVENT SISTEM: Aksi sistem di latar belakang berupa timer yang berdetak setiap 1 detik.
+    _backgroundTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      // Mengubah State berdasarkan Event sistem
+      setState(() {
+        secondsViewed++; 
+      });
+    });
+  }
+
+  // === 3. LIFECYCLE: dispose ===
+  @override
+  void dispose() {
+    // Menandakan akhir dari widget saat pengguna pindah halaman.
+    // Sangat penting untuk mematikan timer di sini agar memori RAM ponsel tidak terkuras sia-sia (memory leak)[cite: 2].
+    _backgroundTimer?.cancel();
+    super.dispose();
+  }
+
+  // === 4. LIFECYCLE: build ===
   @override
   Widget build(BuildContext context) {
+    // Di sinilah UI digambar[cite: 2].
+    // Setiap kali ada Event yang memicu setState, sistem berputar kembali ke fungsi build untuk menggambar ulang dengan data terbaru[cite: 2].
     return Scaffold(
       appBar: AppBar(
         title: const Text('Detail Tugas'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        // Wajib menggunakan tata letak vertikal dengan Column[cite: 1]
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon back tambahan yang difungsikan kembali ke Screen 1[cite: 1]
             GestureDetector(
               onTap: () => Navigator.pop(context),
               child: const Row(
@@ -47,12 +77,11 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
             const SizedBox(height: 16),
             
-            // Container dengan latar belakang warna pastel dan padding[cite: 1]
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFDF6E3), // Warna pastel
+                color: const Color(0xFFFDF6E3),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.black12),
               ),
@@ -62,15 +91,29 @@ class _DetailScreenState extends State<DetailScreen> {
               ),
             ),
             
+            const SizedBox(height: 24),
+            
+            // UI untuk menampilkan perubahan State dari Event Sistem
+            Center(
+              child: Text(
+                'Waktu melihat detail: $secondsViewed detik',
+                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+              ),
+            ),
+            
             const Spacer(),
             
+            // EVENT PENGGUNA (Aksi Fisik)
             Center(
               child: ElevatedButton.icon(
+                // Event: Interaksi langsung berupa sentuhan jari (tap) yang menjadi pemicu aplikasi bertindak[cite: 2].
                 onPressed: () {
+                  // Memicu perubahan State
                   setState(() {
                     isCompleted = !isCompleted;
                   });
                 },
+                // State: Mengubah warna tombol secara dinamis merespons sentuhan[cite: 2].
                 icon: Icon(isCompleted ? Icons.check_circle : Icons.radio_button_unchecked),
                 label: Text(isCompleted ? 'Tugas Selesai' : 'Tandai Selesai'),
                 style: ElevatedButton.styleFrom(
